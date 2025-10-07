@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Team } from '../types';
+import { Team, Results } from '../types';
 import { EVENTS } from '../constants';
 import BracketModal from './BracketModal';
-import { generateSchedule, Match, Schedule } from '../utils/scheduleGenerator';
+import { generateSchedule } from '../utils/scheduleGenerator';
+import MatchDetailsModal from './MatchDetailsModal';
 
 interface TournamentScheduleProps {
   teams: Team[];
+  results: Results;
 }
 
-const TournamentSchedule: React.FC<TournamentScheduleProps> = ({ teams }) => {
+const TournamentSchedule: React.FC<TournamentScheduleProps> = ({ teams, results }) => {
   const [isBracketVisible, setIsBracketVisible] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
   
   const teamNames = teams.map(t => t.name);
   const schedule = generateSchedule(teamNames);
@@ -36,6 +39,12 @@ const TournamentSchedule: React.FC<TournamentScheduleProps> = ({ teams }) => {
         isOpen={isBracketVisible} 
         onClose={() => setIsBracketVisible(false)} 
         teams={teams} 
+      />
+      <MatchDetailsModal 
+        isOpen={!!selectedMatch} 
+        onClose={() => setSelectedMatch(null)} 
+        match={selectedMatch}
+        results={results}
       />
       <div className="bg-gray-800 p-4 sm:p-8 rounded-lg shadow-2xl animate-fade-in print-container">
         <style>
@@ -96,7 +105,18 @@ const TournamentSchedule: React.FC<TournamentScheduleProps> = ({ teams }) => {
                         round.map((match, matchIndex) => {
                           const isByeMatch = !match.team2;
                           return (
-                            <tr key={`${event}-${roundIndex}-${matchIndex}`} className="hover:bg-gray-700/50">
+                            <tr 
+                              key={`${event}-${roundIndex}-${matchIndex}`} 
+                              className={`hover:bg-gray-700/50 ${!isByeMatch && 'cursor-pointer'}`}
+                              onClick={() => {
+                                if (isByeMatch) return;
+                                setSelectedMatch({
+                                  ...match,
+                                  round: roundIndex + 1,
+                                  roundIndex: roundIndex,
+                                });
+                              }}
+                            >
                               <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-center font-medium text-white sm:pl-6">{matchCounter++}</td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-gray-300">{roundIndex + 1}</td>
                               <td className="px-3 py-4 text-sm text-gray-300">

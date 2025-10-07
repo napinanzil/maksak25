@@ -15,6 +15,7 @@ interface HeaderProps {
 const navLinks: { view: View; label: string }[] = [
     { view: 'setup', label: 'Daftar Pasukan' },
     { view: 'schedule', label: 'Jadual & Carta' },
+    { view: 'lineup', label: 'Slip Perlawanan' },
     { view: 'resultsEntry', label: 'Isi Keputusan' },
     { view: 'groupResultsEntry', label: 'Isi Keputusan Kumpulan' },
     { view: 'resultsSummary', label: 'Papan Markah' },

@@ -3,6 +3,7 @@ import { Team, Results } from '../types';
 import { EVENTS } from '../constants';
 import { generateSchedule } from '../utils/scheduleGenerator';
 import MatchDetailsModal from './MatchDetailsModal';
+import TeamMatchHistoryModal from './TeamMatchHistoryModal';
 
 interface GroupResultsProps {
   teams: Team[];
@@ -47,6 +48,7 @@ const SortableHeader: React.FC<{
 
 const GroupResults: React.FC<GroupResultsProps> = ({ teams, results }) => {
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
+  const [selectedTeamForHistory, setSelectedTeamForHistory] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ sortKey: SortKey; sortOrder: 'asc' | 'desc' }>({ sortKey: 'points', sortOrder: 'desc' });
   const [selectedTeam1, setSelectedTeam1] = useState<string>('');
   const [selectedTeam2, setSelectedTeam2] = useState<string>('');
@@ -69,31 +71,31 @@ const GroupResults: React.FC<GroupResultsProps> = ({ teams, results }) => {
         let team1CategoryWins = 0;
         let team2CategoryWins = 0;
         const eventWinners: { event: string, winner: string|null }[] = [];
+        const { team1, team2 } = match;
 
         EVENTS.forEach(event => {
-          const matchId = `${event}-${roundIndex}-${match.team1}-vs-${match.team2}`;
+          const matchId = `${event}-${roundIndex}-${team1}-vs-${team2}`;
           const result = results[matchId];
           let winner = null;
 
           if (result && typeof result.team1Score === 'number' && typeof result.team2Score === 'number') {
+            // Increment 'played' for each category with a result
+            teamStats[team1].played++;
+            teamStats[team2].played++;
+            
             if (result.team1Score > result.team2Score) {
               team1CategoryWins++;
-              winner = match.team1;
+              winner = team1;
             } else if (result.team2Score > result.team1Score) {
               team2CategoryWins++;
-              winner = match.team2;
+              winner = team2;
             }
           }
            eventWinners.push({ event, winner });
         });
 
-        const { team1, team2 } = match;
-
-        // Update overall stats if at least one category was played
+        // Update overall match-level stats if at least one category was played
         if (team1CategoryWins > 0 || team2CategoryWins > 0) {
-            teamStats[team1].played++;
-            teamStats[team2].played++;
-            
             teamStats[team1].categoriesWon += team1CategoryWins;
             teamStats[team2].categoriesWon += team2CategoryWins;
             
@@ -207,6 +209,13 @@ const GroupResults: React.FC<GroupResultsProps> = ({ teams, results }) => {
         match={selectedMatch}
         results={results}
       />
+      <TeamMatchHistoryModal
+        isOpen={!!selectedTeamForHistory}
+        onClose={() => setSelectedTeamForHistory(null)}
+        teamName={selectedTeamForHistory}
+        matches={detailedMatches}
+        onSelectMatchDetails={(match) => setSelectedMatch(match)}
+      />
       <div className="bg-gray-800 p-4 sm:p-8 rounded-lg shadow-2xl animate-fade-in">
         <div className="flex justify-between items-center mb-8 border-b-2 border-mak-gold pb-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-mak-gold">Keputusan Format Kumpulan</h2>
@@ -219,24 +228,30 @@ const GroupResults: React.FC<GroupResultsProps> = ({ teams, results }) => {
               <thead className="bg-gray-700/50">
                   <tr>
                       <SortableHeader label="Pasukan" title="Nama Pasukan" sortKey="teamName" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-300 sm:pl-6"/>
-                      <SortableHeader label="Main" title="Perlawanan" sortKey="played" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
-                      <SortableHeader label="Menang" title="Menang" sortKey="wins" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
-                      <SortableHeader label="Kalah" title="Kalah" sortKey="losses" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
+                      <SortableHeader label="Main" title="Jumlah Kategori Dimainkan" sortKey="played" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
+                      <SortableHeader label="Menang" title="Menang (Perlawanan)" sortKey="wins" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
+                      <SortableHeader label="Kalah" title="Kalah (Perlawanan)" sortKey="losses" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
                       <SortableHeader label="Kategori Menang" title="Kategori Menang" sortKey="categoriesWon" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
                       <SortableHeader label="Kategori Kalah" title="Kategori Kalah" sortKey="categoriesLost" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
-                      <SortableHeader label="Mata" title="Mata" sortKey="points" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
+                      <SortableHeader label="Mata" title="Mata (Jumlah Kategori Menang)" sortKey="points" currentSortKey={sortConfig.sortKey} sortOrder={sortConfig.sortOrder} onSort={handleSort} />
                   </tr>
               </thead>
               <tbody className="divide-y divide-gray-700/50 bg-gray-800">
                   {sortedStandings.map(([teamName, stats]) => (
                       <tr key={teamName}>
-                      <td className="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-white sm:pl-6">{teamName}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.played}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-green-400">{stats.wins}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-red-400">{stats.losses}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.categoriesWon}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.categoriesLost}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-center font-bold text-mak-gold">{stats.points}</td>
+                        <td 
+                          className="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-white sm:pl-6 cursor-pointer hover:text-mak-gold transition-colors"
+                          onClick={() => setSelectedTeamForHistory(teamName)}
+                          title={`Lihat sejarah perlawanan untuk ${teamName}`}
+                        >
+                            {teamName}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.played}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-green-400">{stats.wins}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-red-400">{stats.losses}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.categoriesWon}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center text-gray-300">{stats.categoriesLost}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-sm text-center font-bold text-mak-gold">{stats.points}</td>
                       </tr>
                   ))}
               </tbody>
