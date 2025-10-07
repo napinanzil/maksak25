@@ -1,0 +1,5 @@
+{
+  "name": "Sistem Pertandingan Ping Pong MAKSAK 2025",
+  "description": "A web application to manage teams and events for the MAKSAK 2025 Ping Pong Tournament. Users can add teams and assign players to five different event categories.",
+  "requestFramePermissions": []
+}
