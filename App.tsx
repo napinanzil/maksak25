@@ -10,8 +10,9 @@ import ResultsSummary from './components/ResultsSummary';
 import GroupResults from './components/GroupResults';
 import GroupResultsEntry from './components/GroupResultsEntry';
 import PasswordPrompt from './components/PasswordPrompt';
+import LineupDisplay from './components/LineupDisplay';
 
-export type View = 'setup' | 'schedule' | 'resultsEntry' | 'groupResultsEntry' | 'resultsSummary' | 'groupResults';
+export type View = 'setup' | 'schedule' | 'lineup' | 'resultsEntry' | 'groupResultsEntry' | 'resultsSummary' | 'groupResults';
 
 // Helper function to validate and migrate data structure
 const migrateAndValidateData = (data: any): { teams: Team[], results: Results } => {
@@ -151,7 +152,7 @@ const App: React.FC = () => {
   };
 
   const handleNavigate = (newView: View) => {
-    if ((newView !== 'setup') && teams.length < 2 && !['resultsSummary', 'groupResults'].includes(newView)) {
+    if (['schedule', 'lineup', 'resultsEntry', 'groupResultsEntry'].includes(newView) && teams.length < 2) {
       alert("Sila tambah sekurang-kurangnya dua pasukan terlebih dahulu.");
       return;
     }
@@ -230,7 +231,9 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'schedule':
-        return <TournamentSchedule teams={teams} />;
+        return <TournamentSchedule teams={teams} results={results} />;
+      case 'lineup':
+        return <LineupDisplay teams={teams} />;
       case 'resultsEntry':
         return <ResultsEntry teams={teams} results={results} onUpdateResult={handleUpdateResult} />;
       case 'groupResultsEntry':
